@@ -1,0 +1,29 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /channel-service
+
+spring:
+  application:
+    name: channel-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/channel_bill?useUnicode=true&characterEncoding=utf8&useSSL=false
+    username: postgres
+    password: postgres
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+logging:
+  level:
+    com.payment.reconcile.channel: debug

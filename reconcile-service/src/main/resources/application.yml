@@ -1,0 +1,25 @@
+server:
+  port: 8083
+  servlet:
+    context-path: /reconcile-service
+
+spring:
+  application:
+    name: reconcile-service
+
+  datasource:
+    mysql:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3306/payment_order?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      username: root
+      password: root
+
+    postgresql:
+      driver-class-name: org.postgresql.Driver
+      jdbc-url: jdbc:postgresql://localhost:5432/channel_bill?useUnicode=true&characterEncoding=utf8&useSSL=false
+      username: postgres
+      password: postgres
+
+logging:
+  level:
+    com.payment.reconcile: debug
