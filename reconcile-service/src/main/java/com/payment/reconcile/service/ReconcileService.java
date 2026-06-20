@@ -6,6 +6,7 @@ import com.payment.reconcile.dto.ReconcileRequest;
 import com.payment.reconcile.entity.ChannelBill;
 import com.payment.reconcile.entity.PaymentOrder;
 import com.payment.reconcile.entity.ReconcileDiff;
+import com.payment.reconcile.entity.ReconcileTask;
 import com.payment.reconcile.mapper.mysql.PaymentOrderMapper;
 import com.payment.reconcile.mapper.mysql.ReconcileDiffMapper;
 import com.payment.reconcile.mapper.postgresql.ChannelBillMapper;
@@ -37,6 +38,12 @@ public class ReconcileService {
 
     @Resource
     private ReconcileDiffMapper reconcileDiffMapper;
+
+    @Resource
+    private ReconcileTaskService reconcileTaskService;
+
+    @Resource
+    private ReconcileAsyncExecutor reconcileAsyncExecutor;
 
     @Transactional(transactionManager = "mysqlTransactionManager", rollbackFor = Exception.class)
     public Map<String, Object> reconcileSingle(ReconcileRequest request) {
@@ -313,5 +320,32 @@ public class ReconcileService {
         wrapper.orderByDesc(ReconcileDiff::getCreateTime);
 
         return reconcileDiffMapper.selectList(wrapper);
+    }
+
+    public Map<String, Object> submitBatchTask(BatchReconcileRequest request) {
+        log.info("提交批量对账任务, startDate={}, endDate={}", request.getStartDate(), request.getEndDate());
+
+        String batchNo = request.getReconcileBatchNo() != null ?
+                request.getReconcileBatchNo() : generateBatchNo();
+
+        ReconcileTask task = reconcileTaskService.createTask(
+                "BATCH", request.getStartDate(), request.getEndDate(), batchNo, request.getRemark());
+
+        reconcileAsyncExecutor.doAsyncReconcile(task.getTaskId(), request.getStartDate(), request.getEndDate(),
+                batchNo, request.getRemark());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("taskId", task.getTaskId());
+        result.put("reconcileBatchNo", batchNo);
+        result.put("taskStatus", ReconcileTaskService.STATUS_PENDING);
+        result.put("message", "任务已提交，后台异步处理中");
+
+        log.info("批量对账任务提交成功, taskId={}", task.getTaskId());
+        return result;
+    }
+
+    public ReconcileDiff doReconcileInternal(PaymentOrder order, ChannelBill bill,
+                                             String merchantOrderNo, String batchNo, String remark) {
+        return doReconcile(order, bill, merchantOrderNo, batchNo, remark);
     }
 }
